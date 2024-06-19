@@ -10,6 +10,10 @@ const app = express();
 //     });
 //   }
 // );
+app.use(express.urlencoded({ extended: true }));
+app.listen(8080, function () {
+  console.log("hello server");
+});
 
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const uri =
@@ -29,21 +33,54 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    await client.db("todoapp").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
+
+    const myDB = client.db("todoapp");
+    const myColl = myDB.collection("post");
+
+    const result = await myColl.insertOne({
+      이름: "john",
+      나이: 20,
+    });
+
+    console.log("save fin");
+  } catch (err) {
+    console.log(err.stack);
   } finally {
     // Ensures that the client will close when you finish/error
     await client.close();
   }
 }
-run().catch(console.dir);
+// run().catch(console.dir);
+async function addparam(request) {
+  try {
+    // Connect the client to the server	(optional starting in v4.7)
+    await client.connect();
+    // Send a ping to confirm a successful connection
+    await client.db("todoapp").command({ ping: 1 });
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
 
-app.use(express.urlencoded({ extended: true }));
-app.listen(8080, function () {
-  console.log("hello server");
-});
+    const myDB = client.db("todoapp");
+    const myColl = myDB.collection("post");
+
+    const result = await myColl.insertOne({
+      제목: request.body.title,
+      날짜: request.body.date,
+    });
+
+    console.log("save fin");
+  } catch (err) {
+    console.log(err.stack);
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+  }
+}
 
 app.get("/beauty", function (request, response) {
   response.send("뷰티용품을 쇼핑할 수 있는 페이지입니다.");
@@ -64,4 +101,5 @@ app.get("/write", function (request, response) {
 app.post("/add", function (request, response) {
   response.send("send fin");
   console.log(request.body);
+  addparam(request).catch(console.dir);
 });
