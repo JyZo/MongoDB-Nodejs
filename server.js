@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+const methodOverride = require("method-override");
 
 // const MongoClient = require("mongodb").MongoClient;
 // MongoClient.connect(
@@ -12,6 +13,7 @@ const app = express();
 // );
 app.use(express.urlencoded({ extended: true }));
 app.use("/public", express.static("public"));
+app.use(methodOverride("_method"));
 app.listen(8080, function () {
   console.log("hello server");
 });
@@ -29,35 +31,6 @@ const uri =
 //     deprecationErrors: true,
 //   },
 // });
-
-async function run() {
-  try {
-    // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
-    // Send a ping to confirm a successful connection
-    await client.db("todoapp").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
-
-    const myDB = client.db("todoapp");
-    const myColl = myDB.collection("post");
-
-    const result = await myColl.insertOne({
-      이름: "john",
-      나이: 20,
-    });
-
-    console.log("save fin");
-  } catch (err) {
-    console.log(err.stack);
-  } finally {
-    // Ensures that the client will close when you finish/error
-    console.log("connect close");
-    await client.close();
-  }
-}
-// run().catch(console.dir);
 async function addparam(request, totalCount) {
   const client = new MongoClient(uri, {
     serverApi: {
@@ -258,6 +231,81 @@ app.get("/detail/:idx", async function (request, response) {
       function (err, result) {
         console.log(result);
         response.render("detail.ejs", { detailNum: result });
+      }
+    );
+  } catch (err) {
+    console.log(err.stack);
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+    console.log("connect close");
+  }
+});
+
+app.get("/edit/:idx", async function (request, response) {
+  const client = new MongoClient(uri, {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    },
+  });
+
+  try {
+    // Connect the client to the server	(optional starting in v4.7)
+    await client.connect();
+    // Send a ping to confirm a successful connection
+    await client.db("todoapp").command({ ping: 1 });
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
+
+    const myDB = client.db("todoapp");
+    const myColl = myDB.collection("post");
+
+    const getData = await myColl.findOne(
+      { _id: parseInt(request.params.idx) },
+      function (err, result) {
+        console.log(result);
+        response.render("edit.ejs", { editNum: result });
+      }
+    );
+  } catch (err) {
+    console.log(err.stack);
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+    console.log("connect close");
+  }
+});
+
+app.put("/edit", async function (request, response) {
+  const client = new MongoClient(uri, {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    },
+  });
+
+  try {
+    // Connect the client to the server	(optional starting in v4.7)
+    await client.connect();
+    // Send a ping to confirm a successful connection
+    await client.db("todoapp").command({ ping: 1 });
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
+
+    const myDB = client.db("todoapp");
+    const myColl = myDB.collection("post");
+
+    await myColl.updateOne(
+      { _id: parseInt(request.body.id) },
+      { $set: { 제목: request.body.title, 날짜: request.body.date } },
+      function (err, result) {
+        console.log("edit fin");
+        response.redirect("/list");
       }
     );
   } catch (err) {

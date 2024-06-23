@@ -13,20 +13,21 @@
   <body>
     
     <%- include('nav.html') %>
-    
-      <h4 class="container mt-4"><strong>글 작성 페이지</strong></h4>
+
+      <h4 class="container mt-4"><strong>글 수정 페이지</strong></h4>
 
       <div class="container mt-3">
-        <form action="/add" method="POST">
+        <form action="/edit?_method=PUT" method="POST">
+            <input type="text" value="<%= editNum._id %>" name="id" style="display: none;">
             <div class="form-group">
                 <label>오늘의 할일</label>
-                <input type="text" class="form-control" name="title">
+                <input type="text" class="form-control" name="title" value="<%=editNum.제목 %>">
             </div>
             <div class="form-group">
                 <label>날짜</label>
-                <input type="text" class="form-control" name="date">
+                <input type="text" class="form-control" name="date" value="<%=editNum.날짜 %>">
             </div>
-            <button type="submit" class="btn btn-success">등록</button>
+            <button type="submit" class="btn btn-primary">수정</button>
         </form>
       </div>
 
