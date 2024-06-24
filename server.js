@@ -444,3 +444,41 @@ passport.deserializeUser(async function (ID, done) {
     console.log("connect close");
   }
 });
+
+app.get("/search", async function (request, response) {
+  console.log(request.query);
+
+  const client = new MongoClient(uri, {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    },
+  });
+
+  try {
+    // Connect the client to the server	(optional starting in v4.7)
+    await client.connect();
+    // Send a ping to confirm a successful connection
+    await client.db("todoapp").command({ ping: 1 });
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
+
+    const myDB = client.db("todoapp");
+    const myColl = myDB.collection("post");
+
+    const getData = await myColl
+      .find({ 제목: request.query.value })
+      .toArray(function (err, result) {
+        console.log(result);
+        response.render("searchresult.ejs", { searchresult: result });
+      });
+  } catch (err) {
+    console.log(err.stack);
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+    console.log("connect close");
+  }
+});
