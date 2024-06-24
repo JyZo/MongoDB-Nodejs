@@ -316,3 +316,131 @@ app.put("/edit", async function (request, response) {
     console.log("connect close");
   }
 });
+
+const passport = require("passport");
+const LocalStrategy = require("passport-local").Strategy;
+const session = require("express-session");
+
+app.use(
+  session({ secret: "secretcode", resave: true, saveUninitialized: false })
+);
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.get("/login", function (request, response) {
+  response.render("login.ejs");
+});
+
+app.post(
+  "/login",
+  passport.authenticate("local", {
+    failureRedirect: "/fail",
+  }),
+  function (request, response) {
+    response.redirect("/");
+  }
+);
+
+app.get("/mypage", checkLogin, function (request, response) {
+  console.log("mypage");
+  console.log(request.user);
+  response.render("mypage.ejs");
+});
+
+function checkLogin(request, response, next) {
+  if (request.user) {
+    next();
+  } else {
+    response.send("not login");
+  }
+}
+
+passport.use(
+  new LocalStrategy(
+    {
+      usernameField: "id",
+      passwordField: "pw",
+      session: true,
+      passReqToCllback: false,
+    },
+    async function (inputID, inputPW, done) {
+      console.log(inputID, inputPW);
+      const client = new MongoClient(uri, {
+        serverApi: {
+          version: ServerApiVersion.v1,
+          strict: true,
+          deprecationErrors: true,
+        },
+      });
+      try {
+        // Connect the client to the server	(optional starting in v4.7)
+        await client.connect();
+        // Send a ping to confirm a successful connection
+        await client.db("todoapp").command({ ping: 1 });
+        console.log(
+          "Pinged your deployment. You successfully connected to MongoDB!"
+        );
+
+        const myDB = client.db("todoapp");
+        const myColl = myDB.collection("login");
+
+        await myColl.findOne({ id: inputID }, function (err, result) {
+          console.log(err);
+          console.log(result);
+          if (err) return done(err);
+          if (!result) return done(null, false, { msg: "ID is not exist" });
+          if (inputPW == result.pw) {
+            return done(null, result);
+          } else {
+            return done(null, false, { msg: "PW is incorrect" });
+          }
+        });
+      } catch (err) {
+        console.log(err.stack);
+      } finally {
+        // Ensures that the client will close when you finish/error
+        await client.close();
+        console.log("connect close");
+      }
+    }
+  )
+);
+
+//session 만들어줌
+passport.serializeUser(function (user, done) {
+  console.log(user);
+  done(null, user.id);
+});
+
+//session 찾을때 실행함수
+passport.deserializeUser(async function (ID, done) {
+  const client = new MongoClient(uri, {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    },
+  });
+  try {
+    // Connect the client to the server	(optional starting in v4.7)
+    await client.connect();
+    // Send a ping to confirm a successful connection
+    await client.db("todoapp").command({ ping: 1 });
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
+
+    const myDB = client.db("todoapp");
+    const myColl = myDB.collection("login");
+
+    await myColl.findOne({ id: ID }, function (err, result) {
+      done(null, result);
+    });
+  } catch (err) {
+    console.log(err.stack);
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+    console.log("connect close");
+  }
+});
