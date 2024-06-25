@@ -467,13 +467,22 @@ app.get("/search", async function (request, response) {
 
     const myDB = client.db("todoapp");
     const myColl = myDB.collection("post");
+    const searchC = [
+      {
+        $search: {
+          index: "titleSearch",
+          text: {
+            query: request.query.value,
+            path: "제목",
+          },
+        },
+      },
+    ];
 
-    const getData = await myColl
-      .find({ 제목: request.query.value })
-      .toArray(function (err, result) {
-        console.log(result);
-        response.render("searchresult.ejs", { searchresult: result });
-      });
+    await myColl.aggregate(searchC).toArray(function (err, result) {
+      console.log(result);
+      response.render("searchresult.ejs", { searchresult: result });
+    });
   } catch (err) {
     console.log(err.stack);
   } finally {
