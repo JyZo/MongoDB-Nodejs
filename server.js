@@ -31,52 +31,6 @@ const uri =
 //     deprecationErrors: true,
 //   },
 // });
-async function addparam(request, totalCount) {
-  const client = new MongoClient(uri, {
-    serverApi: {
-      version: ServerApiVersion.v1,
-      strict: true,
-      deprecationErrors: true,
-    },
-  });
-  try {
-    // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
-    // Send a ping to confirm a successful connection
-    await client.db("todoapp").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
-
-    const myDB = client.db("todoapp");
-    const myColl = myDB.collection("post");
-
-    const result = await myColl.insertOne({
-      _id: totalCount + 1,
-      제목: request.body.title,
-      날짜: request.body.date,
-    });
-
-    await myDB
-      .collection("counter")
-      .updateOne(
-        { name: "개시물갯수" },
-        { $inc: { totalPost: +1 } },
-        function (err, result) {
-          console.log(result.totalPost);
-          console.log("counter update fin");
-        }
-      );
-
-    console.log("save fin");
-  } catch (err) {
-    console.log(err.stack);
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
-    console.log("connect close");
-  }
-}
 
 app.get("/beauty", function (request, response) {
   response.send("뷰티용품을 쇼핑할 수 있는 페이지입니다.");
@@ -92,47 +46,6 @@ app.get("/", function (request, response) {
 
 app.get("/write", function (request, response) {
   response.render("write.ejs");
-});
-
-app.post("/add", async function (request, response) {
-  const client = new MongoClient(uri, {
-    serverApi: {
-      version: ServerApiVersion.v1,
-      strict: true,
-      deprecationErrors: true,
-    },
-  });
-  let totalCount;
-  try {
-    // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
-    // Send a ping to confirm a successful connection
-    await client.db("todoapp").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
-
-    const myDB = client.db("todoapp");
-    const myColl = myDB.collection("counter");
-
-    const getData = await myColl.findOne(
-      { name: "개시물갯수" },
-      function (err, result) {
-        console.log("totalPost");
-        console.log(result.totalPost);
-        totalCount = result.totalPost;
-      }
-    );
-  } catch (err) {
-    console.log(err.stack);
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
-    console.log("connect close");
-  }
-  response.send("send fin");
-  console.log(request.body);
-  addparam(request, totalCount).catch(console.dir);
 });
 
 app.get("/list", async function (request, response) {
@@ -157,44 +70,6 @@ app.get("/list", async function (request, response) {
 
     const getData = await myColl.find().toArray(function (err, result) {
       response.render("list.ejs", { posts: result });
-    });
-  } catch (err) {
-    console.log(err.stack);
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
-    console.log("connect close");
-  }
-});
-
-app.delete("/delete", async function (request, response) {
-  const client = new MongoClient(uri, {
-    serverApi: {
-      version: ServerApiVersion.v1,
-      strict: true,
-      deprecationErrors: true,
-    },
-  });
-
-  try {
-    // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
-    // Send a ping to confirm a successful connection
-    await client.db("todoapp").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
-
-    const myDB = client.db("todoapp");
-    const myColl = myDB.collection("post");
-
-    console.log(request.body._id);
-    request.body._id = parseInt(request.body._id);
-
-    myColl.deleteOne(request.body, function (err, result) {
-      console.log(response.statusCode);
-      response.status(200).send({ msg: "delete suc!!" });
-      console.log("delete fin");
     });
   } catch (err) {
     console.log(err.stack);
@@ -467,17 +342,6 @@ app.get("/search", async function (request, response) {
 
     const myDB = client.db("todoapp");
     const myColl = myDB.collection("post");
-    const searchC = [
-      {
-        $search: {
-          index: "titleSearch",
-          text: {
-            query: request.query.value,
-            path: "제목",
-          },
-        },
-      },
-    ];
 
     await myColl.aggregate(searchC).toArray(function (err, result) {
       console.log(result);
@@ -490,4 +354,216 @@ app.get("/search", async function (request, response) {
     await client.close();
     console.log("connect close");
   }
+});
+
+app.post("/register", async (request, response) => {
+  const client = new MongoClient(uri, {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    },
+  });
+
+  try {
+    // Connect the client to the server	(optional starting in v4.7)
+    await client.connect();
+    // Send a ping to confirm a successful connection
+    await client.db("todoapp").command({ ping: 1 });
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
+
+    const myDB = client.db("todoapp");
+    const myColl = myDB.collection("login");
+
+    await myColl.insertOne(
+      {
+        id: request.body.id,
+        pw: request.body.pw,
+      },
+      function (err, result) {
+        response.redirect("/");
+      }
+    );
+  } catch (err) {
+    console.log(err.stack);
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+    console.log("connect close");
+  }
+});
+
+async function addparam(request, totalCount) {
+  const client = new MongoClient(uri, {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    },
+  });
+  try {
+    // Connect the client to the server	(optional starting in v4.7)
+    await client.connect();
+    // Send a ping to confirm a successful connection
+    await client.db("todoapp").command({ ping: 1 });
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
+
+    const myDB = client.db("todoapp");
+    const myColl = myDB.collection("post");
+
+    await myColl.insertOne({
+      _id: totalCount + 1,
+      제목: request.body.title,
+      날짜: request.body.date,
+      작성자: request.user._id,
+    });
+
+    await myDB
+      .collection("counter")
+      .updateOne(
+        { name: "개시물갯수" },
+        { $inc: { totalPost: +1 } },
+        function (err, result) {
+          console.log(result.totalPost);
+          console.log("counter update fin");
+        }
+      );
+
+    console.log("save fin");
+  } catch (err) {
+    console.log(err.stack);
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+    console.log("connect close");
+  }
+}
+
+app.post("/add", async function (request, response) {
+  const client = new MongoClient(uri, {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    },
+  });
+  let totalCount;
+  try {
+    // Connect the client to the server	(optional starting in v4.7)
+    await client.connect();
+    // Send a ping to confirm a successful connection
+    await client.db("todoapp").command({ ping: 1 });
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
+
+    const myDB = client.db("todoapp");
+    const myColl = myDB.collection("counter");
+
+    await myColl.findOne({ name: "개시물갯수" }, function (err, result) {
+      console.log("totalPost");
+      console.log(result.totalPost);
+      totalCount = result.totalPost;
+    });
+  } catch (err) {
+    console.log(err.stack);
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+    console.log("connect close");
+  }
+  response.send("send fin");
+  console.log(request.body);
+  addparam(request, totalCount).catch(console.dir);
+});
+
+app.delete("/delete", async function (request, response) {
+  const client = new MongoClient(uri, {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    },
+  });
+
+  try {
+    // Connect the client to the server	(optional starting in v4.7)
+    await client.connect();
+    // Send a ping to confirm a successful connection
+    await client.db("todoapp").command({ ping: 1 });
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
+
+    const myDB = client.db("todoapp");
+    const myColl = myDB.collection("post");
+
+    console.log(request.body._id);
+    request.body._id = parseInt(request.body._id);
+
+    const delData = { _id: request.body._id, 작성자: request.user._id };
+
+    await myColl.deleteOne(delData, function (err, result) {
+      console.log(response.statusCode);
+      if (err) {
+        console.log("delete fail");
+      }
+      response.status(200).send({ msg: "delete suc!!" });
+      console.log("delete fin");
+    });
+  } catch (err) {
+    console.log(err.stack);
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+    console.log("connect close");
+  }
+});
+
+// app.get("/shop/shirts", function (request, response) {
+//   response.send("shirt!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+// });
+
+// app.get("/shop/pants", function (request, response) {
+//   response.send("pants!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+// });
+
+app.use("/", require("./routes/shop"));
+
+// app.get("/sports", function (request, response) {
+//   response.send("sports!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+// });
+
+// app.get("/game", function (request, response) {
+//   response.send("game!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+// });
+
+app.use("/board/sub/", require("./routes/board"));
+
+let multer = require("multer");
+var storage = multer.diskStorage({
+  destination: function (request, file, cb) {
+    cb(null, "./public/img");
+  },
+  filename: function (request, file, cb) {
+    cb(null, file.originalname);
+  },
+});
+
+var upload = multer({ storage: storage });
+
+app.get("/upload", function (request, response) {
+  response.render("upload.ejs");
+});
+
+app.post("/upload", upload.single("profile"), function (request, response) {
+  response.send("upload fin");
+});
+
+app.get("/image/:imgname", function (request, response) {
+  response.sendFile(__dirname + "/public/img/" + request.params.imgname);
 });
