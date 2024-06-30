@@ -68,7 +68,7 @@ app.get("/list", async function (request, response) {
     const myDB = client.db("todoapp");
     const myColl = myDB.collection("post");
 
-    const getData = await myColl.find().toArray(function (err, result) {
+    await myColl.find().toArray(function (err, result) {
       response.render("list.ejs", { posts: result });
     });
   } catch (err) {
@@ -566,4 +566,175 @@ app.post("/upload", upload.single("profile"), function (request, response) {
 
 app.get("/image/:imgname", function (request, response) {
   response.sendFile(__dirname + "/public/img/" + request.params.imgname);
+});
+
+app.get("/chat", checkLogin, async function (request, response) {
+  const client = new MongoClient(uri, {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    },
+  });
+
+  try {
+    // Connect the client to the server	(optional starting in v4.7)
+    await client.connect();
+    // Send a ping to confirm a successful connection
+    await client.db("todoapp").command({ ping: 1 });
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
+
+    const myDB = client.db("todoapp");
+    const myColl = myDB.collection("chatroom");
+
+    await myColl
+      .find({ member: request.user._id })
+      .toArray()
+      .then((result) => {
+        console.log(result);
+        response.render("chat.ejs", { data: result });
+      });
+  } catch (err) {
+    console.log(err.stack);
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+    console.log("connect close");
+  }
+});
+
+app.post("/chat", checkLogin, async (request, response) => {
+  const client = new MongoClient(uri, {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    },
+  });
+
+  try {
+    // Connect the client to the server	(optional starting in v4.7)
+    await client.connect();
+    // Send a ping to confirm a successful connection
+    await client.db("todoapp").command({ ping: 1 });
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
+
+    const myDB = client.db("todoapp");
+    const myColl = myDB.collection("chatroom");
+    const { ObjectId } = require("mongodb");
+
+    var savedData = {
+      title: "하하",
+      member: [ObjectId(request.body.servemanID), request.user._id],
+      date: new Date(),
+    };
+
+    await myColl.insertOne(savedData, function (err, result) {
+      response.send("chat room make");
+    });
+  } catch (err) {
+    console.log(err.stack);
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+    console.log("connect close");
+  }
+});
+
+app.post("/message", checkLogin, async function (request, response) {
+  const client = new MongoClient(uri, {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    },
+  });
+
+  try {
+    // Connect the client to the server	(optional starting in v4.7)
+    await client.connect();
+    // Send a ping to confirm a successful connection
+    await client.db("todoapp").command({ ping: 1 });
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
+
+    const myDB = client.db("todoapp");
+    const myColl = myDB.collection("message");
+
+    var msgData = {
+      parent: request.body.parent,
+      content: request.body.content,
+      userid: request.user._id,
+      date: new Date(),
+    };
+
+    await myColl.insertOne(msgData, function (err, result) {
+      console.log("msg saved suc");
+      response.send("msg saved suc");
+    });
+  } catch (err) {
+    console.log(err.stack);
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+    console.log("connect close");
+  }
+});
+
+app.get("/message/:id", checkLogin, async function (request, response) {
+  response.writeHead(200, {
+    connection: "Keep-alive",
+    "Content-type": "text/event-stream",
+    "cache-control": "no-cache",
+  });
+
+  const client = new MongoClient(uri, {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    },
+  });
+
+  try {
+    // Connect the client to the server	(optional starting in v4.7)
+    await client.connect();
+    // Send a ping to confirm a successful connection
+    await client.db("todoapp").command({ ping: 1 });
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
+
+    const myDB = client.db("todoapp");
+    const myColl = myDB.collection("message");
+
+    await myColl
+      .find({ parent: request.params.id })
+      .toArray()
+      .then((result) => {
+        console.log(result);
+        response.write("event: test\n");
+        response.write("data:" + JSON.stringify(result) + "\n\n");
+      });
+
+    const pipeline = [{ $match: { "fullDocument.parent": request.params.id } }];
+    const collection = myDB.collection("message");
+    const changeStream = collection.watch(pipeline);
+    changeStream.on("change", (result) => {
+      console.log(result.fullDocument);
+      response.write("event: test\n");
+      response.write("data:" + JSON.stringify([result.fullDocument]) + "\n\n");
+    });
+  } catch (err) {
+    console.log(err.stack);
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+    console.log("connect close");
+  }
 });

@@ -39,6 +39,7 @@
               <h4>제목 : <%= posts[i].제목 %></h4>
               <h4>날짜 : <%= posts[i].날짜 %></h4>
               <button class="delete btn btn-danger" data-id="<%= posts[i]._id %>">삭제</button>
+              <button class="chat btn btn-warning" data-id="<%= posts[i].작성자 %>">채팅하기</button>
           </li>
           <% } %>
         </ul>
@@ -64,6 +65,34 @@
           alert("delete fail");
         })
         })
+      </script>
+
+      <script>
+        $('.chat').click(function(e){
+          let id = e.target.dataset.id;
+          console.log("chat click");
+          $.post('/chat',{servemanID : id}).then(() => {
+            console.log("chat room suc");
+          })
+        })
+
+        //혼자 해본거
+        // $('.chat').click(function(e){
+        //   console.log(e.target.dataset.code);
+        //   let chatNum = e.target.dataset.code;
+        //   console.log("chat start");
+        //   $.ajax({
+        //   method:"POST",
+        //   url:"/chat",
+        //   data:{_id : chatNum}
+        // }).done(function(result){
+        //   console.log(result);
+        //   alert("chat room suc");
+
+        // }).fail(function(){
+        //   alert("chat room make fail");
+        // })
+        // })
 
         
       </script>
