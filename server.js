@@ -688,9 +688,9 @@ app.post("/message", checkLogin, async function (request, response) {
 
 app.get("/message/:id", checkLogin, async function (request, response) {
   response.writeHead(200, {
-    connection: "Keep-alive",
-    "Content-type": "text/event-stream",
-    "cache-control": "no-cache",
+    Connection: "keep-alive",
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
   });
 
   const client = new MongoClient(uri, {
@@ -713,28 +713,35 @@ app.get("/message/:id", checkLogin, async function (request, response) {
     const myDB = client.db("todoapp");
     const myColl = myDB.collection("message");
 
-    await myColl
+    myColl
       .find({ parent: request.params.id })
       .toArray()
       .then((result) => {
         console.log(result);
         response.write("event: test\n");
-        response.write("data:" + JSON.stringify(result) + "\n\n");
+        response.write(`data: ${JSON.stringify(result)}\n\n`);
       });
 
+    const myColl2 = myDB.collection("message");
+    const options = { fullDocument: "updateLookup" };
     const pipeline = [{ $match: { "fullDocument.parent": request.params.id } }];
-    const collection = myDB.collection("message");
-    const changeStream = collection.watch(pipeline);
+
+    const changeStream = myColl2.watch(pipeline, options);
+
     changeStream.on("change", (result) => {
+      console.log("chagestream");
       console.log(result.fullDocument);
+
       response.write("event: test\n");
-      response.write("data:" + JSON.stringify([result.fullDocument]) + "\n\n");
+      response.write(`data: ${JSON.stringify([result.fullDocument])}\n\n`);
     });
+
+    // await changeStream.close();
   } catch (err) {
     console.log(err.stack);
   } finally {
     // Ensures that the client will close when you finish/error
-    await client.close();
+    // await client.close();
     console.log("connect close");
   }
 });

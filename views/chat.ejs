@@ -31,9 +31,9 @@
             <div class="col-9 p-0">
                 <div class="chat-room">
                     <ul class="list-group chat-content" id="chat-content">
-                        <li><span class="chat-box">채팅방 1내용</span></li>
-                        <li><span class="chat-box">채팅방 2내용</span></li>
-                        <li><span class="chat-box mine">채팅방 1내용</span></li>
+                        <!-- <li><span class="chat-box">채팅방 1내용</span></li>
+                        <li><span class="chat-box">채팅방 2내용</span></li> -->
+                        <!-- <li><span class="chat-box mine">채팅방 1내용</span></li> -->
                     </ul>
                     <div class="input-group">
                         <input class="form-control" id="chat-input">
@@ -52,32 +52,21 @@
         var eventSource;
         $('.list-group-item').click(function(){
             clickedChatId = this.dataset.id;
+
             $('.chat-content').html('');
 
             if(eventSource != undefined){
                 eventSource.close();
             }
-
+            console.log("clickedchatId["+clickedChatId+"]");
             eventSource = new EventSource('/message/'+clickedChatId);
 
             eventSource.addEventListener('test',function(e){
                 console.log(JSON.parse(e.data));
                 let resData = JSON.parse(e.data);
                 resData.forEach(function(i){
-                    $('.chat-content').append('<li><span class="chat-box">'+ i.content+'</span></li>');
+                    $('.chat-content').append(`<li><span class="chat-box">${i.content}</span></li>`);
                 })
-
-                // let li = document.createElement("li"); 
-                // let span = document.createElement("span");
-                // span.setAttribute('class', 'chat-box');
-
-                // const inputTag = document.querySelector('#chat-content');
-                
-                // for(var i = 0; i< resData.length; i++){
-                //     inputTag.appendChild(li).appendChild(span);
-                //     const chatTag = document.querySelector('.chat-box');
-                //     chatTag.insertAdjacentHTML("beforeend", resData[i].content);
-                // }
 
             });
 
@@ -90,7 +79,7 @@
                 content : chatInput,
             }
             $.post('/message',sendData).then(() => {
-                console.log()
+                console.log("send fin")
             })
         })
 
