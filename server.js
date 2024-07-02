@@ -1,6 +1,9 @@
 const express = require("express");
 const app = express();
 const methodOverride = require("method-override");
+const http = require("http").createServer(app);
+const { Server } = require("socket.io");
+const io = new Server(http);
 
 // const MongoClient = require("mongodb").MongoClient;
 // MongoClient.connect(
@@ -14,7 +17,7 @@ const methodOverride = require("method-override");
 app.use(express.urlencoded({ extended: true }));
 app.use("/public", express.static("public"));
 app.use(methodOverride("_method"));
-app.listen(8080, function () {
+http.listen(8080, function () {
   console.log("hello server");
 });
 app.set("view engine", "ejs");
@@ -742,6 +745,30 @@ app.get("/message/:id", checkLogin, async function (request, response) {
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
-    console.log("connect close");
+    // console.log("connect close");
   }
+});
+
+app.get("/socket", function (request, response) {
+  response.render("socket.ejs");
+});
+
+io.on("connection", function (socket) {
+  console.log("socket on!");
+
+  socket.on("room1-send", function (data) {
+    io.to("room1").emit("broadcast", data);
+  });
+
+  socket.on("joinroom", function (data) {
+    console.log("joinnnnn");
+    console.log(data);
+    socket.join("room1");
+  });
+
+  socket.on("user-send", function (data) {
+    console.log(data);
+    io.emit("broadcast", data);
+    //io.to(socket.id).emit('broadcast',data) 처럼 특정 user한테도 보낼수있음
+  });
 });
